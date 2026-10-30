@@ -4,4 +4,4 @@
 ### IblockProperty
 Коллекция дополнительных свойств инфоблока, отсутствующих в коробочной версии, но расширяющие возможности элементов инфоблока
 - `DescriptionHTML` свойство HTML/текст
-- `ElementsLists` свойство реализующее возможности привязки к элементам инфоблока в виде списка или автокомплита. Автокомплит реализован с использованием ajax `local/modules/core/lib/ajax/Business/IblockProperty/elements_lists__element_search.php`
+- `ElementsLists` свойство реализующее возможности привязки к элементам инфоблока в виде списка или автокомплита. Автокомплит реализован с использованием ajax `lib/ajax/Business/IblockProperty/elements_lists__element_search.php`
