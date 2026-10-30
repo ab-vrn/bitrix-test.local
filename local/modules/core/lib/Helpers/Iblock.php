@@ -94,4 +94,131 @@ class Iblock
 
         return null;
     }
+
+    /**
+     * Создание нового типа инфоблока
+     * @param string $code Символьный код типа
+     * @param string $name Наименование типа
+     * @param string $sectionName Название разделов
+     * @param string $elementName Название элементов
+     * @param bool $sections Разрешить разделы
+     * @param bool $inRss Использовать RSS
+     * @param int $sort Индекс сортировки
+     * @return bool
+     * @throws \Bitrix\Main\ArgumentException
+     * @throws \Bitrix\Main\LoaderException
+     * @throws \Bitrix\Main\ObjectPropertyException
+     * @throws \Bitrix\Main\SystemException
+     */
+    public static function createIblockType(
+        string $code,
+        string $name,
+        string $sectionName = 'Раздел',
+        string $elementName = 'Элемент',
+        bool $sections = true,
+        bool $inRss = false,
+        int $sort = 500
+    ): bool {
+        if (!Loader::includeModule('iblock')) {
+            return false;
+        }
+
+        // Проверяем, существует ли тип
+        $existingType = \Bitrix\Iblock\TypeTable::getList([
+            'select' => ['ID'],
+            'filter' => [
+                '=ID' => $code,
+            ],
+            'limit' => 1,
+        ])->fetch();
+
+        if ($existingType) {
+            return false;
+        }
+
+        $iblockType = new \CIBlockType();
+
+        return (bool)$iblockType->Add([
+            'ID' => $code,
+            'SECTIONS' => $sections ? 'Y' : 'N',
+            'IN_RSS' => $inRss ? 'Y' : 'N',
+            'SORT' => $sort,
+            'LANG' => [
+                LANGUAGE_ID => [
+                    'NAME' => $name,
+                    'SECTION_NAME' => $sectionName,
+                    'ELEMENT_NAME' => $elementName,
+                ],
+            ],
+        ]);
+    }
+
+    /**
+     * Создание нового инфоблока
+     * @param string $typeId Символьный код типа инфоблока
+     * @param string $name Название инфоблока
+     * @param string $code Символьный код инфоблока
+     * @param array $siteIds Массив ID сайтов, например ['s1']
+     * @param string|null $apiCode Код для объектного ORM
+     * @param bool $active Активность инфоблока
+     * @param int $sort Сортировка
+     * @return int|null
+     * @throws \Bitrix\Main\ArgumentException
+     * @throws \Bitrix\Main\LoaderException
+     * @throws \Bitrix\Main\ObjectPropertyException
+     * @throws \Bitrix\Main\SystemException
+     */
+    public static function createIblock(
+        string $typeId,
+        string $name,
+        string $code,
+        array $siteIds,
+        ?string $apiCode = null,
+        bool $active = true,
+        int $sort = 500
+    ): ?int {
+        if (!Loader::includeModule('iblock')) {
+            return null;
+        }
+
+        // Проверяем существование инфоблока
+        $existingIblock = IblockTable::getList([
+            'select' => ['ID'],
+            'filter' => [
+                '=IBLOCK_TYPE_ID' => $typeId,
+                '=CODE' => $code,
+            ],
+            'limit' => 1,
+        ])->fetch();
+
+        if ($existingIblock) {
+            return null;
+        }
+
+        $iblock = new \CIBlock();
+
+        $fields = [
+            'IBLOCK_TYPE_ID' => $typeId,
+            'NAME' => $name,
+            'CODE' => $code,
+            'ACTIVE' => $active ? 'Y' : 'N',
+            'SORT' => $sort,
+            'SITE_ID' => $siteIds,
+        ];
+
+        if ($apiCode !== null) {
+            $fields['API_CODE'] = $apiCode;
+        }
+
+        $iblockId = $iblock->Add($fields);
+
+        if (!$iblockId) {
+            return null;
+        }
+
+        // Сбрасываем кеш получения ID и символьного кода
+        Cache::createInstance()->cleanDir('/core/iblock');
+
+        return (int)$iblockId;
+    }
 }
