@@ -13,6 +13,17 @@
 Loader::registerNamespace('Core', __DIR__ . '/lib');
 ```
 
+Для начала использования инициализируйте модуль в init.php `local/php_interface/init.php`:
+```php
+use Bitrix\Main\Loader;
+
+// Подключаем модуль core
+if (Loader::includeModule('core')) {
+    // Регистрируем обработчики событий
+    \Core\EventHandlers\Base::register();
+}
+```
+
 ## Использование
 
 ```php
