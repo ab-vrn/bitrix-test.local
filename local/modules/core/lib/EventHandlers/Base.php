@@ -30,6 +30,9 @@ class Base
          * Пользовательский тип свойства "HTML/текст".
          */
         $eventManager->addEventHandler('iblock', 'OnIBlockPropertyBuildList', [\Core\Business\IblockProperty\DescriptionHTML::class, 'GetUserTypeDescription']);
+        /**
+         * Пользовательский тип свойства "Local: Привязка к элементам в виде списка"
+         */
         $eventManager->addEventHandler('iblock', 'OnIBlockPropertyBuildList', [\Core\Business\IblockProperty\ElementsLists::class, 'GetUserTypeDescription']);
     }
 }
