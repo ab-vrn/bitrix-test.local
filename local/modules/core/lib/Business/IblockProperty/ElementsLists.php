@@ -10,6 +10,7 @@ class ElementsLists extends \CIBlockPropertyElementList
 
     /**
      * Описание пользовательского типа свойства.
+     * @return array
      */
     public static function GetUserTypeDescription(): array
     {
@@ -34,6 +35,8 @@ class ElementsLists extends \CIBlockPropertyElementList
 
     /**
      * Подготовка настроек свойства.
+     * @param $arProperty
+     * @return array
      */
     public static function PrepareSettings($arProperty): array
     {
@@ -49,7 +52,11 @@ class ElementsLists extends \CIBlockPropertyElementList
     }
 
     /**
-     * HTML настроек свойства.
+     * HTML настроек свойства
+     * @param $arProperty
+     * @param $strHTMLControlName
+     * @param $arPropertyFields
+     * @return string
      */
     public static function GetSettingsHTML(
         $arProperty,
@@ -111,6 +118,10 @@ class ElementsLists extends \CIBlockPropertyElementList
 
     /**
      * Редактирование одиночного свойства.
+     * @param $arProperty
+     * @param $value
+     * @param $strHTMLControlName
+     * @return string
      */
     public static function GetPropertyFieldHtml(
         $arProperty,
@@ -138,6 +149,10 @@ class ElementsLists extends \CIBlockPropertyElementList
 
     /**
      * Редактирование множественного свойства.
+     * @param $arProperty
+     * @param $values
+     * @param $strHTMLControlName
+     * @return string
      */
     public static function GetPropertyFieldHtmlMulty(
         $arProperty,
@@ -690,7 +705,12 @@ class ElementsLists extends \CIBlockPropertyElementList
     }
 
     /**
-     * HTML одного выбранного элемента для множественного свойства.
+     * HTML одного выбранного элемента для множественного свойства
+     * @param string $fieldName
+     * @param string $key
+     * @param int $elementId
+     * @param string $elementName
+     * @return string
      */
     private static function getSelectedTagHtml(
         string $fieldName,
@@ -726,7 +746,11 @@ class ElementsLists extends \CIBlockPropertyElementList
     }
 
     /**
-     * Публичное отображение значения свойства.
+     * Публичное отображение значения свойства
+     * @param $arProperty
+     * @param $arValue
+     * @param $strHTMLControlName
+     * @return mixed|string
      */
     public static function GetPublicViewHTML($arProperty, $arValue, $strHTMLControlName)
     {
@@ -738,7 +762,10 @@ class ElementsLists extends \CIBlockPropertyElementList
     }
 
     /**
-     * Получение расширенного значения.
+     * Получение расширенного значения
+     * @param array $arProperty
+     * @param array $value
+     * @return array|false
      */
     public static function GetExtendedValue($arProperty, $value)
     {
@@ -749,7 +776,10 @@ class ElementsLists extends \CIBlockPropertyElementList
     }
 
     /**
-     * Настройки UI-фильтра.
+     * Настройки UI-фильтра
+     * @param $arProperty
+     * @param $strHTMLControlName
+     * @param $fields
      */
     public static function GetUIFilterProperty($arProperty, $strHTMLControlName, &$fields)
     {
@@ -761,7 +791,10 @@ class ElementsLists extends \CIBlockPropertyElementList
     }
 
     /**
-     * Административный фильтр.
+     * Административный фильтр
+     * @param $arProperty
+     * @param $strHTMLControlName
+     * @return string
      */
     public static function GetAdminFilterHTML($arProperty, $strHTMLControlName)
     {
