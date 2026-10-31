@@ -23,4 +23,7 @@
 public static function getIblockIdByCode(string $code): ?int
 ```
 
-- `Iblock` класс для работы с инфоблоком
+#### Параметры
+| Параметр | Тип | Описание |
+|---|---|---|
+| $code | string | Символьный код инфоблока |
