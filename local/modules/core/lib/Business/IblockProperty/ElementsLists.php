@@ -8,10 +8,6 @@ class ElementsLists extends \CIBlockPropertyElementList
 {
     public const USER_TYPE = 'EListCustom';
 
-    /**
-     * Описание пользовательского типа свойства.
-     * @return array
-     */
     public static function GetUserTypeDescription(): array
     {
         return [
@@ -33,11 +29,6 @@ class ElementsLists extends \CIBlockPropertyElementList
         ];
     }
 
-    /**
-     * Подготовка настроек свойства.
-     * @param $arProperty
-     * @return array
-     */
     public static function PrepareSettings($arProperty): array
     {
         $settings = parent::PrepareSettings($arProperty);
@@ -51,13 +42,6 @@ class ElementsLists extends \CIBlockPropertyElementList
         return $settings;
     }
 
-    /**
-     * HTML настроек свойства
-     * @param $arProperty
-     * @param $strHTMLControlName
-     * @param $arPropertyFields
-     * @return string
-     */
     public static function GetSettingsHTML(
         $arProperty,
         $strHTMLControlName,
@@ -118,10 +102,6 @@ class ElementsLists extends \CIBlockPropertyElementList
 
     /**
      * Редактирование одиночного свойства.
-     * @param $arProperty
-     * @param $value
-     * @param $strHTMLControlName
-     * @return string
      */
     public static function GetPropertyFieldHtml(
         $arProperty,
@@ -130,7 +110,6 @@ class ElementsLists extends \CIBlockPropertyElementList
     ): string {
         $settings = self::PrepareSettings($arProperty);
 
-        // Стандартный режим отображения.
         if ($settings['UI_EDIT_TYPE'] !== 1) {
             return parent::GetPropertyFieldHtml(
                 $arProperty,
@@ -149,27 +128,15 @@ class ElementsLists extends \CIBlockPropertyElementList
 
     /**
      * Редактирование множественного свойства.
-     * @param $arProperty
-     * @param $values
-     * @param $strHTMLControlName
-     * @return string
+     *
+     * Для множественного свойства всегда используем собственный
+     * интерфейс с тегами, независимо от UI_EDIT_TYPE.
      */
     public static function GetPropertyFieldHtmlMulty(
         $arProperty,
         $values,
         $strHTMLControlName
     ): string {
-        $settings = self::PrepareSettings($arProperty);
-
-        // Стандартный режим отображения.
-        if ($settings['UI_EDIT_TYPE'] !== 1) {
-            return parent::GetPropertyFieldHtmlMulty(
-                $arProperty,
-                $values,
-                $strHTMLControlName
-            );
-        }
-
         return self::getAutocompleteHtml(
             $arProperty,
             $values,
@@ -180,13 +147,6 @@ class ElementsLists extends \CIBlockPropertyElementList
 
     /**
      * Формирование HTML автокомплитера.
-     *
-     * @param array $arProperty
-     * @param array $values
-     * @param array $strHTMLControlName
-     * @param bool $multiple
-     *
-     * @return string
      */
     private static function getAutocompleteHtml(
         $arProperty,
@@ -212,13 +172,6 @@ class ElementsLists extends \CIBlockPropertyElementList
 
         $selectedElements = [];
         $nextIndex = 0;
-
-        /*
-         * Получаем ID выбранных элементов.
-         *
-         * Для множественного свойства сохраняем ключи существующих
-         * значений, чтобы не потерять привязку к строкам свойства.
-         */
         $selectedIds = [];
 
         foreach ((array)$values as $key => $value) {
@@ -237,9 +190,6 @@ class ElementsLists extends \CIBlockPropertyElementList
 
         $selectedIds = array_values(array_unique($selectedIds));
 
-        /*
-         * Получаем названия выбранных элементов одним запросом.
-         */
         if (!empty($selectedIds)) {
             $dbElements = \CIBlockElement::GetList(
                 [],
@@ -265,9 +215,6 @@ class ElementsLists extends \CIBlockPropertyElementList
         $selectedCount = 0;
 
         if ($multiple) {
-            /*
-             * Существующие значения выводим с их ключами.
-             */
             foreach ((array)$values as $key => $value) {
                 $elementId = (int)($value['VALUE'] ?? 0);
 
@@ -278,21 +225,16 @@ class ElementsLists extends \CIBlockPropertyElementList
                     continue;
                 }
 
-                $elementName = $selectedElements[$elementId];
-
                 $selectedHtml .= self::getSelectedTagHtml(
                     $fieldName,
                     (string)$key,
                     $elementId,
-                    $elementName
+                    $selectedElements[$elementId]
                 );
 
                 $selectedCount++;
             }
         } else {
-            /*
-             * Для одиночного свойства используется одно скрытое поле.
-             */
             $elementId = (int)($values[0]['VALUE'] ?? 0);
             $elementName = $selectedElements[$elementId] ?? '';
 
@@ -320,13 +262,11 @@ class ElementsLists extends \CIBlockPropertyElementList
                 data-multiple="' . $multipleAttribute . '"
                 data-next-index="' . $nextIndex . '"
             >
-
                 <div class="core-element-autocomplete__selected">
                     ' . $selectedHtml . '
                 </div>
 
                 <div class="core-element-autocomplete__input-wrapper">
-
                     <input
                         type="text"
                         class="core-element-autocomplete__input"
@@ -335,11 +275,9 @@ class ElementsLists extends \CIBlockPropertyElementList
                     >
 
                     <div class="core-element-autocomplete__results"></div>
-
                 </div>
 
                 <div class="core-element-autocomplete__message"></div>
-
             </div>
 
             <style>
@@ -350,32 +288,46 @@ class ElementsLists extends \CIBlockPropertyElementList
                 #' . htmlspecialcharsbx($uid) . ' .core-element-autocomplete__selected {
                     display: flex;
                     flex-wrap: wrap;
-                    gap: 5px;
-                    margin-bottom: 5px;
+                    gap: 6px;
+                    margin-bottom: 8px;
                 }
 
                 #' . htmlspecialcharsbx($uid) . ' .core-element-autocomplete__tag {
                     display: inline-flex;
                     align-items: center;
-                    gap: 8px;
-                    padding: 4px 8px;
-                    background: #eaf1f7;
-                    border: 1px solid #cbd8e3;
-                    border-radius: 3px;
+                    gap: 9px;
+                    padding: 6px 10px;
+                    background: #edf4fa;
+                    border: 1px solid #cbdce9;
+                    border-radius: 5px;
+                    color: #334b60;
+                    font-size: 13px;
+                    line-height: 18px;
+                }
+
+                #' . htmlspecialcharsbx($uid) . ' .core-element-autocomplete__tag-name {
+                    overflow-wrap: anywhere;
                 }
 
                 #' . htmlspecialcharsbx($uid) . ' .core-element-autocomplete__remove {
-                    border: 0;
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    width: 18px;
+                    height: 18px;
                     padding: 0;
+                    border: 0;
+                    border-radius: 50%;
                     background: transparent;
+                    color: #718096;
                     cursor: pointer;
-                    font-size: 16px;
+                    font-size: 17px;
                     line-height: 1;
-                    color: #777;
                 }
 
                 #' . htmlspecialcharsbx($uid) . ' .core-element-autocomplete__remove:hover {
-                    color: #d00;
+                    background: #dce8f1;
+                    color: #c0392b;
                 }
 
                 #' . htmlspecialcharsbx($uid) . ' .core-element-autocomplete__input-wrapper {
@@ -385,6 +337,17 @@ class ElementsLists extends \CIBlockPropertyElementList
                 #' . htmlspecialcharsbx($uid) . ' .core-element-autocomplete__input {
                     box-sizing: border-box;
                     width: 100%;
+                    min-height: 34px;
+                    padding: 6px 9px;
+                    border: 1px solid #c6cdd3;
+                    border-radius: 4px;
+                    outline: none;
+                    background: #fff;
+                }
+
+                #' . htmlspecialcharsbx($uid) . ' .core-element-autocomplete__input:focus {
+                    border-color: #6da6d4;
+                    box-shadow: 0 0 0 2px rgba(70, 140, 200, .12);
                 }
 
                 #' . htmlspecialcharsbx($uid) . ' .core-element-autocomplete__results {
@@ -398,34 +361,40 @@ class ElementsLists extends \CIBlockPropertyElementList
                     overflow-y: auto;
                     background: #fff;
                     border: 1px solid #c6cdd3;
-                    box-shadow: 0 2px 6px rgba(0,0,0,.15);
+                    border-radius: 4px;
+                    box-shadow: 0 3px 10px rgba(0, 0, 0, .12);
                 }
 
                 #' . htmlspecialcharsbx($uid) . ' .core-element-autocomplete__option {
-                    padding: 8px 10px;
+                    padding: 9px 11px;
                     cursor: pointer;
                     border-bottom: 1px solid #eee;
+                    color: #333;
+                }
+
+                #' . htmlspecialcharsbx($uid) . ' .core-element-autocomplete__option:last-child {
+                    border-bottom: 0;
                 }
 
                 #' . htmlspecialcharsbx($uid) . ' .core-element-autocomplete__option:hover {
-                    background: #f3f5f7;
+                    background: #f1f6fa;
                 }
 
                 #' . htmlspecialcharsbx($uid) . ' .core-element-autocomplete__empty {
-                    padding: 8px 10px;
+                    padding: 9px 11px;
                     color: #777;
                 }
 
                 #' . htmlspecialcharsbx($uid) . ' .core-element-autocomplete__message {
                     display: none;
-                    margin-top: 4px;
-                    color: #d00;
+                    margin-top: 5px;
+                    color: #c0392b;
+                    font-size: 12px;
                 }
             </style>
 
             <script>
             (function() {
-
                 var container = document.getElementById(' . \CUtil::PhpToJSObject($uid) . ');
 
                 if (!container || container.dataset.initialized === "Y") {
@@ -465,7 +434,9 @@ class ElementsLists extends \CIBlockPropertyElementList
                     var ids = [];
 
                     selected.querySelectorAll(".core-element-autocomplete__value").forEach(function(element) {
-                        ids.push(String(element.value));
+                        if (element.value) {
+                            ids.push(String(element.value));
+                        }
                     });
 
                     return ids;
@@ -519,7 +490,6 @@ class ElementsLists extends \CIBlockPropertyElementList
 
                         selected.appendChild(createTag(item));
                         input.value = "";
-
                     } else {
                         selected.innerHTML = "";
 
@@ -557,7 +527,10 @@ class ElementsLists extends \CIBlockPropertyElementList
                     var selectedIds = getSelectedIds();
 
                     items.forEach(function(item) {
-                        if (multiple && selectedIds.indexOf(String(item.ID)) !== -1) {
+                        if (
+                            multiple
+                            && selectedIds.indexOf(String(item.ID)) !== -1
+                        ) {
                             return;
                         }
 
@@ -657,8 +630,6 @@ class ElementsLists extends \CIBlockPropertyElementList
 
                     var query = input.value.trim();
 
-                    // В одиночном режиме при изменении текста
-                    // прежнее значение больше не считается выбранным.
                     if (!multiple) {
                         var hidden = selected.querySelector(".core-element-autocomplete__value");
 
@@ -698,19 +669,13 @@ class ElementsLists extends \CIBlockPropertyElementList
                         }
                     }
                 });
-
             })();
             </script>
         ';
     }
 
     /**
-     * HTML одного выбранного элемента для множественного свойства
-     * @param string $fieldName
-     * @param string $key
-     * @param int $elementId
-     * @param string $elementName
-     * @return string
+     * HTML одного выбранного элемента для множественного свойства.
      */
     private static function getSelectedTagHtml(
         string $fieldName,
@@ -745,13 +710,6 @@ class ElementsLists extends \CIBlockPropertyElementList
         ';
     }
 
-    /**
-     * Публичное отображение значения свойства
-     * @param $arProperty
-     * @param $arValue
-     * @param $strHTMLControlName
-     * @return mixed|string
-     */
     public static function GetPublicViewHTML($arProperty, $arValue, $strHTMLControlName)
     {
         return parent::GetPublicViewHTML(
@@ -761,12 +719,6 @@ class ElementsLists extends \CIBlockPropertyElementList
         );
     }
 
-    /**
-     * Получение расширенного значения
-     * @param array $arProperty
-     * @param array $value
-     * @return array|false
-     */
     public static function GetExtendedValue($arProperty, $value)
     {
         return parent::GetExtendedValue(
@@ -775,12 +727,6 @@ class ElementsLists extends \CIBlockPropertyElementList
         );
     }
 
-    /**
-     * Настройки UI-фильтра
-     * @param $arProperty
-     * @param $strHTMLControlName
-     * @param $fields
-     */
     public static function GetUIFilterProperty($arProperty, $strHTMLControlName, &$fields)
     {
         return parent::GetUIFilterProperty(
@@ -790,12 +736,6 @@ class ElementsLists extends \CIBlockPropertyElementList
         );
     }
 
-    /**
-     * Административный фильтр
-     * @param $arProperty
-     * @param $strHTMLControlName
-     * @return string
-     */
     public static function GetAdminFilterHTML($arProperty, $strHTMLControlName)
     {
         return parent::GetAdminFilterHTML(

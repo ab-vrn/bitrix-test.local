@@ -35,5 +35,8 @@ class Base
          * Пользовательский тип свойства "Local: Привязка к элементам в виде списка"
          */
         $eventManager->addEventHandler('iblock', 'OnIBlockPropertyBuildList', [\Core\Business\IblockProperty\ElementsLists::class, 'GetUserTypeDescription']);
+
+
+        $eventManager->addEventHandler('iblock', 'OnIBlockPropertyBuildList', [\Core\Business\IblockProperty\SectionsLists::class, 'GetUserTypeDescription']);
     }
 }
