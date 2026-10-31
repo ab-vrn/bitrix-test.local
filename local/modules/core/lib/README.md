@@ -33,3 +33,11 @@ public static function getIblockIdByCode(string $code): ?int
 |---|---|
 | int | ID найденного инфоблока |
 | null | Инфоблок не найден или модуль iblock не подключён |
+
+#### Исключения
+| Исключение | Описание |
+|---|---|
+| Bitrix\Main\ArgumentException | Ошибка аргумента ORM-запроса |
+| Bitrix\Main\LoaderException | Ошибка подключения модуля |
+| Bitrix\Main\ObjectPropertyException | Ошибка обращения к свойству ORM-сущности |
+| Bitrix\Main\SystemException | Общая системная ошибка ORM |
