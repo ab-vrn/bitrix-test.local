@@ -41,3 +41,19 @@ public static function getIblockIdByCode(string $code): ?int
 | Bitrix\Main\LoaderException | Ошибка подключения модуля |
 | Bitrix\Main\ObjectPropertyException | Ошибка обращения к свойству ORM-сущности |
 | Bitrix\Main\SystemException | Общая системная ошибка ORM |
+
+#### Кеширование
+| Параметр | Значение | Описание |
+|---|---|---|
+| Время кеширования | CACHE_TIME | Время хранения результата в секундах |
+| Идентификатор кеша | iblock_id_by_code_ + md5($code) | Уникальный кеш для каждого символьного кода |
+| Директория кеша | /core/iblock | Директория хранения кеша |
+
+#### Пример использования
+```php
+$iblockId = IblockHelper::getIblockIdByCode('news');
+
+if ($iblockId !== null) {
+    // Инфоблок найден
+}
+```
