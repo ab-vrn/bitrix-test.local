@@ -65,7 +65,7 @@ $replacements = [
     ],
 ];
 
-$result = ArrayHelper::replaceArrayParameters($array, $replacements);
+$result = \Core\Tools\Data::replaceArrayParameters($array, $replacements);
 //  Результат
 [
     'NAME' => 'Новое название',
