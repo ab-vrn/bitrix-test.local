@@ -51,7 +51,7 @@ public static function getIblockIdByCode(string $code): ?int
 
 #### Пример использования
 ```php
-$iblockId = IblockHelper::getIblockIdByCode('news');
+$iblockId = \Core\Helpers\Iblock::getIblockIdByCode('news');
 
 if ($iblockId !== null) {
     // Инфоблок найден
@@ -97,6 +97,132 @@ public static function getIblockCodeById(int $iblockId): ?string
 
 #### Пример использования
 ```php
-$iblockCode = IblockHelper::getIblockCodeById(12);
+$iblockCode = \Core\Helpers\Iblock::getIblockCodeById(12);
 ```
 Если метод вернул `null`, инфоблок не найден или модуль `iblock` не подключён.
+
+### createIblockType()
+Создаёт новый тип инфоблока.
+
+Метод проверяет наличие типа с указанным символьным кодом с помощью D7 ORM (`Bitrix\Iblock\TypeTable`). Если тип уже существует, метод возвращает `false`.
+
+Для создания типа используется `CIBlockType::Add()`. Метод позволяет задать название типа, названия разделов и элементов, разрешение на создание разделов, использование RSS и индекс сортировки.
+
+Если модуль `iblock` не подключён или создание типа завершилось ошибкой, метод возвращает `false`.
+
+#### Сигнатура
+
+```php
+public static function createIblockType(string $code, string $name, string $sectionName = 'Раздел', string $elementName = 'Элемент', bool $sections = true, bool $inRss = false, int $sort = 500): bool
+```
+
+#### Параметры
+
+| Параметр | Тип | Описание |
+|---|---|---|
+| `$code` | `string` | Символьный код типа инфоблока |
+| `$name` | `string` | Наименование типа |
+| `$sectionName` | `string` | Название разделов |
+| `$elementName` | `string` | Название элементов |
+| `$sections` | `bool` | Разрешить создание разделов |
+| `$inRss` | `bool` | Использовать RSS |
+| `$sort` | `int` | Индекс сортировки |
+
+#### Возвращаемое значение
+
+| Тип | Описание |
+|---|---|
+| `true` | Тип инфоблока успешно создан |
+| `false` | Тип уже существует, модуль `iblock` не подключён или создание завершилось ошибкой |
+
+#### Исключения
+
+| Исключение | Описание |
+|---|---|
+| `Bitrix\Main\ArgumentException` | Ошибка аргумента ORM-запроса |
+| `Bitrix\Main\LoaderException` | Ошибка подключения модуля |
+| `Bitrix\Main\ObjectPropertyException` | Ошибка обращения к свойству ORM-сущности |
+| `Bitrix\Main\SystemException` | Общая системная ошибка ORM |
+
+### Пример использования
+
+```php
+$result = \Core\Helpers\Iblock::createIblockType(
+    code: 'articles',
+    name: 'Статьи',
+    sectionName: 'Разделы',
+    elementName: 'Статьи'
+);
+
+if ($result) {
+    // Тип инфоблока создан
+}
+```
+
+### createIblock()
+
+Создаёт новый инфоблок указанного типа.
+
+Перед созданием метод проверяет существование инфоблока с таким же символьным кодом (`CODE`) в рамках указанного типа (`IBLOCK_TYPE_ID`) с помощью D7 ORM (`Bitrix\Iblock\IblockTable`).
+
+Для создания инфоблока используется `CIBlock::Add()`. Метод позволяет задать название, символьный код, привязку к сайтам, API-код для объектного ORM, активность и индекс сортировки.
+
+После успешного создания очищается директория кеша `/core/iblock`, чтобы исключить использование устаревших результатов методов получения ID и символьного кода инфоблока.
+
+Если инфоблок уже существует, модуль `iblock` не подключён или создание завершилось ошибкой, метод возвращает `null`.
+
+#### Сигнатура
+
+```php
+public static function createIblock(string $typeId, string $name, string $code, array $siteIds, ?string $apiCode = null, bool $active = true, int $sort = 500): ?int
+```
+
+#### Параметры
+
+| Параметр | Тип | Описание |
+|---|---|---|
+| `$typeId` | `string` | Символьный код типа инфоблока |
+| `$name` | `string` | Название инфоблока |
+| `$code` | `string` | Символьный код инфоблока |
+| `$siteIds` | `array` | Массив ID сайтов, к которым привязывается инфоблок, например `['s1']` |
+| `$apiCode` | `string|null` | API-код для объектного ORM |
+| `$active` | `bool` | Активность инфоблока |
+| `$sort` | `int` | Индекс сортировки |
+
+#### Возвращаемое значение
+
+| Тип | Описание |
+|---|---|
+| `int` | ID успешно созданного инфоблока |
+| `null` | Инфоблок уже существует, модуль `iblock` не подключён или создание завершилось ошибкой |
+
+#### Исключения
+
+| Исключение | Описание |
+|---|---|
+| `Bitrix\Main\ArgumentException` | Ошибка аргумента ORM-запроса |
+| `Bitrix\Main\LoaderException` | Ошибка подключения модуля |
+| `Bitrix\Main\ObjectPropertyException` | Ошибка обращения к свойству ORM-сущности |
+| `Bitrix\Main\SystemException` | Общая системная ошибка ORM |
+
+#### Кеширование
+
+| Параметр | Значение | Описание |
+|---|---|---|
+| Директория кеша | `/core/iblock` | Директория, кеш которой очищается после создания инфоблока |
+
+#### Пример использования
+
+```php
+$iblockId = IblockHelper::createIblock(
+    typeId: 'content',
+    name: 'Новости компании',
+    code: 'company_news',
+    siteIds: ['s1'],
+    apiCode: 'CompanyNews'
+);
+
+if ($iblockId !== null) {
+    // Инфоблок успешно создан
+}
+```
