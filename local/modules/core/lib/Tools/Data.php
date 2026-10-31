@@ -11,16 +11,16 @@ class Data
         }
 
         foreach ($array as $key => $value) {
-            if (!array_key_exists($key, $replacements)) {
-                continue;
-            }
+            if (array_key_exists($key, $replacements)) {
+                $replacement = $replacements[$key];
 
-            $replacement = $replacements[$key];
-
-            if (is_array($value) && is_array($replacement)) {
-                $array[$key] = self::replaceArrayParameters($value, $replacement);
-            } else {
-                $array[$key] = $replacement;
+                if (is_array($value) && is_array($replacement)) {
+                    $array[$key] = self::replaceArrayParameters($value, $replacement);
+                } else {
+                    $array[$key] = $replacement;
+                }
+            } elseif (is_array($value)) {
+                $array[$key] = self::replaceArrayParameters($value, $replacements);
             }
         }
 

@@ -41,7 +41,7 @@
 ### Пример использования
 
 ```php
-//  Исходный массив
+// исходный массив
 $array = [
     'NAME' => 'Старое название',
     'ACTIVE' => 'N',
@@ -56,27 +56,21 @@ $array = [
 ];
 //  Массив замены
 $replacements = [
-    'NAME' => 'Новое название',
-    'SETTINGS' => [
-        'COLOR' => 'blue',
-        'OPTIONS' => [
-            'WIDTH' => 300,
-        ],
-    ],
+        'WIDTH' => 123456789,
 ];
 
 $result = \Core\Tools\Data::replaceArrayParameters($array, $replacements);
 //  Результат
-[
-    'NAME' => 'Новое название',
+$array = [
+    'NAME' => 'Старое название',
     'ACTIVE' => 'N',
     'SETTINGS' => [
-        'COLOR' => 'blue',
+        'COLOR' => 'red',
         'SIZE' => 'large',
         'OPTIONS' => [
-            'WIDTH' => 300,
+            'WIDTH' => 123456789, // Изменено
             'HEIGHT' => 200,
         ],
     ],
-]
+];
 ```
