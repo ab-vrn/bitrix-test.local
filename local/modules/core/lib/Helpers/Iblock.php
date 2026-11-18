@@ -3,6 +3,7 @@
 namespace Core\Helpers;
 
 use Bitrix\Iblock\IblockTable;
+use Bitrix\Iblock\SectionTable;
 use Bitrix\Main\Loader;
 
 class Iblock
@@ -220,5 +221,144 @@ class Iblock
         Cache::createInstance()->cleanDir('/core/iblock');
 
         return (int)$iblockId;
+    }
+
+    /**
+     * Получение фрашмента дерева подразделений и рядом находящихся подразделений одного уровня с родительским пользователя
+     * @param int $userDepartmentId ID подразделения пользователя
+     * @param string $iblockDepartmentCode Символьный код инфоблока
+     * @return array
+     * @throws \Bitrix\Main\ArgumentException
+     * @throws \Bitrix\Main\LoaderException
+     * @throws \Bitrix\Main\ObjectPropertyException
+     * @throws \Bitrix\Main\SystemException
+     */
+    public static function getDepartmentEnviroment(int $userDepartmentId, string $iblockDepartmentCode) : array
+    {
+        $arResult = [];
+
+        if ($userDepartmentId <= 0 || empty($iblockDepartmentCode)) {
+            return $arResult;
+        }
+
+        $iblockId = self::getIblockIdByCode($iblockDepartmentCode);
+
+        if ($iblockId <= 0) {
+            return $arResult;
+        }
+
+        //  Информация о текущем подразделении пользователя
+        $currentDepartment = SectionTable::getList(
+            [
+                'filter' => [
+                    '=IBLOCK_ID' => $iblockId,
+                    '=ID' => $iblockId,
+                    '=ACTIVE' => 'Y'
+                ],
+                'select' => [
+                    'ID',
+                    'NAME',
+                    'IBLOCK_SECTION_ID',
+                    'LEFT_MARGIN',
+                    'RIGHT_MARGIN',
+                    'DEPTH_LEVEL'
+                ]
+            ]
+        )->fetch();
+
+        if (!$currentDepartment) {
+            return $arResult;
+        }
+
+        $arResult = $currentDepartment;
+
+        //  Информация по родительскому подразделению
+        $parentDep = null;
+        if (!empty($currentDepartment['IBLOCK_SECTION_ID'])) {
+            $parentDep = SectionTable::getList(
+                [
+                    'filter' => [
+                        '=IBLOCK_ID' => $iblockId,
+                        '=ID' => $currentDepartment['IBLOCK_SECTION_ID'],
+                        '=ACTIVE' => 'Y'
+                    ],
+                    'select' => [
+                        'ID',
+                        'IBLOCK_SECTION_ID',
+                        'LEFT_MARGIN',
+                        'RIGHT_MARGIN',
+                        'DEPTH_LEVEL'
+                    ]
+                ]
+            )->fetch();
+        }
+
+            //  Вышестоящие всех уровней
+            $arFilter = [
+                'LOGIC' => 'OR',
+                [
+                    '<LEFT_MARGIN' => $currentDepartment['LEFT_MARGIN'],
+                    '>RIGHT_MARGIN' => $currentDepartment['RIGHT_MARGIN'],
+                ]
+            ];
+
+            //  Есть родитель
+            if ($parentDep) {
+                $arFilter[] = [
+                    [
+                        '>LEFT_MARGIN' => $currentDepartment['LEFT_MARGIN'],
+                        '<RIGHT_MARGIN' => $currentDepartment['RIGHT_MARGIN'],
+                    ]
+                ];
+            } else {
+                $arFilter[] = [
+                    [
+                        '>=LEFT_MARGIN' => $currentDepartment['LEFT_MARGIN'],
+                        '<=RIGHT_MARGIN' => $currentDepartment['RIGHT_MARGIN'],
+                    ]
+                ];
+            }
+
+            $sections = SectionTable::getList(
+                [
+                    'order' => [
+                        'LEFT_MARGIN' => 'ASC'
+                    ],
+                    'filter' => [
+                        '=IBLOCK_ID' => $iblockId,
+                        '=ACTIVE' => 'Y',
+                        $arFilter
+                    ],
+                    'select' => [
+                        'ID',
+                        'IBLOCK_SECTION_ID',
+                        'LEFT_MARGIN',
+                        'RIGHT_MARGIN',
+                        'DEPTH_LEVEL'
+                    ]
+                ]
+            )->fetchAll();
+
+            foreach ($sections as $section) {
+                if ((int)$section['ID'] === (int)$currentDepartment['ID']) {
+                    continue;
+                }
+
+                if (
+                    $section['LEFT_MARGIN'] < $currentDepartment['LEFT_MARGIN'] &&
+                    $section['RIGHT_MARGIN'] > $currentDepartment['RIGHT_MARGIN']
+                ) {
+                    $arResult[] = $section;
+                } elseif (
+                    $section['LEFT_MARGIN'] > $currentDepartment['LEFT_MARGIN'] &&
+                    $section['RIGHT_MARGIN'] < $currentDepartment['RIGHT_MARGIN']
+                ) {
+                    $arResult[] = $section;
+                } else {
+                    $arResult[] = $section;
+                }
+            }
+
+        return $arResult;
     }
 }
