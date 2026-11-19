@@ -119,7 +119,8 @@ class Iblock
         bool $sections = true,
         bool $inRss = false,
         int $sort = 500
-    ): bool {
+    ): bool
+    {
         if (!Loader::includeModule('iblock')) {
             return false;
         }
@@ -177,7 +178,8 @@ class Iblock
         ?string $apiCode = null,
         bool $active = true,
         int $sort = 500
-    ): ?int {
+    ): ?int
+    {
         if (!Loader::includeModule('iblock')) {
             return null;
         }
@@ -233,132 +235,142 @@ class Iblock
      * @throws \Bitrix\Main\ObjectPropertyException
      * @throws \Bitrix\Main\SystemException
      */
-    public static function getDepartmentEnviroment(int $userDepartmentId, string $iblockDepartmentCode) : array
+    public static function getDepartmentEnviroment(int $userDepartmentId, string $iblockDepartmentCode, int $depthLevel = 0): array
     {
-        $arResult = [];
-
         if ($userDepartmentId <= 0 || empty($iblockDepartmentCode)) {
-            return $arResult;
+            return [];
         }
 
-        $iblockId = self::getIblockIdByCode($iblockDepartmentCode);
+        $nIblockId = self::getIblockIdByCode($iblockDepartmentCode);
 
-        if ($iblockId <= 0) {
-            return $arResult;
+        if ($nIblockId <= 0) {
+            return [];
         }
 
-        //  Информация о текущем подразделении пользователя
-        $currentDepartment = SectionTable::getList(
+        //  Информация о текущего подразделении пользователя
+        $arFilterCurrentDepartment = [
+            '=IBLOCK_ID' => $nIblockId,
+            '=ID' => $userDepartmentId,
+            '=ACTIVE' => 'Y',
+        ];
+
+        if ($depthLevel > 0) {
+            $arFilterCurrentDepartment['>DEPTH_LEVEL'] = $depthLevel;
+        }
+
+        $currentDepartment = SectionTable::getRow(
             [
-                'filter' => [
-                    '=IBLOCK_ID' => $iblockId,
-                    '=ID' => $iblockId,
-                    '=ACTIVE' => 'Y'
-                ],
+                'filter' => $arFilterCurrentDepartment,
                 'select' => [
                     'ID',
-                    'NAME',
                     'IBLOCK_SECTION_ID',
                     'LEFT_MARGIN',
-                    'RIGHT_MARGIN',
-                    'DEPTH_LEVEL'
+                    'RIGHT_MARGIN'
+                ],
+                'cache' => [
+                    'ttl' => 86400
                 ]
             ]
-        )->fetch();
+        );
 
         if (!$currentDepartment) {
-            return $arResult;
+            return [];
         }
 
-        $arResult = $currentDepartment;
-
-        //  Информация по родительскому подразделению
+        //  Информация о родительском подразделении
         $parentDep = null;
         if (!empty($currentDepartment['IBLOCK_SECTION_ID'])) {
-            $parentDep = SectionTable::getList(
+            $parentDep = SectionTable::getRow(
                 [
                     'filter' => [
-                        '=IBLOCK_ID' => $iblockId,
-                        '=ID' => $currentDepartment['IBLOCK_SECTION_ID'],
+                        '=IBLOCK_ID' => $nIblockId,
+                        '=ID' => (int)$currentDepartment['IBLOCK_SECTION_ID'],
                         '=ACTIVE' => 'Y'
                     ],
                     'select' => [
                         'ID',
-                        'IBLOCK_SECTION_ID',
                         'LEFT_MARGIN',
-                        'RIGHT_MARGIN',
-                        'DEPTH_LEVEL'
+                        'RIGHT_MARGIN'
+                    ],
+                    'cache' => [
+                        'ttl' => 86400
                     ]
                 ]
-            )->fetch();
+            );
         }
 
-            //  Вышестоящие всех уровней
-            $arFilter = [
-                'LOGIC' => 'OR',
-                [
-                    '<LEFT_MARGIN' => $currentDepartment['LEFT_MARGIN'],
-                    '>RIGHT_MARGIN' => $currentDepartment['RIGHT_MARGIN'],
-                ]
+        $arFilterSection = [
+            'LIGIC' => 'OR',
+            [
+                '<LEFT_MARGIN' => $currentDepartment['LEFT_MARGIN'],
+                '>RIGHT_MARGIN' => $currentDepartment['RIGHT_MARGIN'],
+            ]
+        ];
+
+        if ($parentDep) {
+            $arFilterSection[] = [
+                '>LEFT_MARGIN' => $parentDep['LEFT_MARGIN'],
+                '<RIGHT_MARGIN' => $parentDep['RIGHT_MARGIN'],
             ];
+        } else {
+            $arFilterSection[] = [
+                '>=LEFT_MARGIN' => $currentDepartment['LEFT_MARGIN'],
+                '=<RIGHT_MARGIN' => $currentDepartment['RIGHT_MARGIN'],
+            ];
+        }
 
-            //  Есть родитель
-            if ($parentDep) {
-                $arFilter[] = [
-                    [
-                        '>LEFT_MARGIN' => $currentDepartment['LEFT_MARGIN'],
-                        '<RIGHT_MARGIN' => $currentDepartment['RIGHT_MARGIN'],
-                    ]
-                ];
-            } else {
-                $arFilter[] = [
-                    [
-                        '>=LEFT_MARGIN' => $currentDepartment['LEFT_MARGIN'],
-                        '<=RIGHT_MARGIN' => $currentDepartment['RIGHT_MARGIN'],
-                    ]
-                ];
-            }
-
-            $sections = SectionTable::getList(
-                [
-                    'order' => [
-                        'LEFT_MARGIN' => 'ASC'
-                    ],
-                    'filter' => [
-                        '=IBLOCK_ID' => $iblockId,
-                        '=ACTIVE' => 'Y',
-                        $arFilter
-                    ],
-                    'select' => [
-                        'ID',
-                        'IBLOCK_SECTION_ID',
-                        'LEFT_MARGIN',
-                        'RIGHT_MARGIN',
-                        'DEPTH_LEVEL'
-                    ]
+        $arFilterSection = [
+            '=IBLOCK_ID' => $nIblockId,
+            '=ACTIVE' => 'Y',
+        ];
+        if ($depthLevel > 0) {
+            $arFilterSection['>DEPTH_LEVEL'] = $arFilterCurrentDepartment;
+        }
+        // Получаем список разделов и имя родителя
+        $arSections = SectionTable::getList(
+            [
+                'order' => [
+                    'LEFT_MARGIN' => 'ASC'
+                ],
+                'filter' => $arFilterSection,
+                'select' => [
+                    'ID',
+                    'NAME',
+                    'SORT',
+                    'IBLOCK_SECTION_ID',
+                    'DEPTH_LEVEL',
+                    'LEFT_MARGIN',
+                    'RIGHT_MARGIN',
+                    'PARENT_NAME' => 'PARENT_SECTION.NAME'
+                ],
+                'cache' => [
+                    'ttl' => 86400
                 ]
-            )->fetchAll();
+            ]
+        )->fetchAll();
 
-            foreach ($sections as $section) {
-                if ((int)$section['ID'] === (int)$currentDepartment['ID']) {
-                    continue;
-                }
-
-                if (
-                    $section['LEFT_MARGIN'] < $currentDepartment['LEFT_MARGIN'] &&
-                    $section['RIGHT_MARGIN'] > $currentDepartment['RIGHT_MARGIN']
-                ) {
-                    $arResult[] = $section;
-                } elseif (
-                    $section['LEFT_MARGIN'] > $currentDepartment['LEFT_MARGIN'] &&
-                    $section['RIGHT_MARGIN'] < $currentDepartment['RIGHT_MARGIN']
-                ) {
-                    $arResult[] = $section;
-                } else {
-                    $arResult[] = $section;
-                }
+        //  Подсчет количества активных детей ждя каждого раздела
+        $directChildrenMap = [];
+        foreach ($arSections as $section) {
+            $parentId = (int)$section['IBLOCK_SECTION_ID'];
+            if ($parentId > 0) {
+                $directChildrenMap[$parentId] = ($directChildrenMap[$parentId] ?? 0) + 1;
             }
+        }
 
-        return $arResult;
+        foreach ($arSections as &$section) {
+            $sectionId = (int)$section['ID'];
+
+            $directChildrenCount = $directChildrenMap[$sectionId] ?? 0;
+
+            $section['PARENT_NAME'] = ($section['DEPTH_LEVEL'] > 2) ? $section['PARENT_NAME'] : null;
+            $section['HAS_CHILDREN'] = $directChildrenCount > 0;
+            $section['CHILDREN_COUNT'] = $directChildrenCount;
+
+            unset($section['PARENT_NAME']);
+        }
+        unser($section);
+
+        return $arSections;
     }
 }
